@@ -13,11 +13,11 @@ public class Main2 {
         numbers.add(3.14);
         numbers.add(10);
         
-        // Пример с <? extends T> - Мы можем извлекать элементы
+        // Пример с <? extends T> - можем извлекать элементы
         addNumbers(integers);
         addNumbers(numbers);
         
-        // Пример с <? super T> - Мы можем добавлять элементы
+        // Пример с <? super T> - можем добавлять элементы
         addToList(integers);
         addToList(numbers);
     }
@@ -32,7 +32,7 @@ public class Main2 {
 
     // Метод для добавления элементов в список, который может содержать суперклассы Integer
     public static void addToList(List<? super Integer> list) {
-        // Мы можем добавить Integer, но не можем извлекать элементы с гарантией типа
+        // можем добавить Integer, но не можем извлекать элементы с гарантией типа
         list.add(10);
         System.out.println("After adding: " + list);
     }
