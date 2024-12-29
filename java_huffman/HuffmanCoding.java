@@ -1,142 +1,131 @@
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.*;
+import java.io.*; // Для операций ввода-вывода
+import java.nio.file.Files; // Для работы с файлами
+import java.nio.file.Paths; // Для обработки путей файлов
+import java.util.*; // Для структур данных, таких как Map и PriorityQueue
 
 // Класс для реализации алгоритма Хаффмана
 public class HuffmanCoding {
-    // Хранит соответствие символов их Хаффман-кодам
-    private Map<Character, String> huffmanCodeMap = new HashMap<>();
-    // Очередь с приоритетом для построения дерева Хаффмана
-    private PriorityQueue<Node> priorityQueue;
+    private Map<Byte, String> huffmanCodeMap = new HashMap<>(); // Хранит таблицу Хаффмана (символ -> код)
+    private PriorityQueue<Node> priorityQueue; // Очередь для построения дерева Хаффмана
 
     // Метод для построения дерева Хаффмана
-    public void buildHuffmanTree(String text) {
-        // Шаг 1: Подсчитать частоты символов в тексте
-        Map<Character, Integer> frequencyMap = new HashMap<>();
-        for (char character : text.toCharArray()) {
-            frequencyMap.put(character, frequencyMap.getOrDefault(character, 0) + 1);
+    public void buildHuffmanTree(byte[] data) {
+        // Подсчет частоты каждого байта
+        Map<Byte, Integer> frequencyMap = new HashMap<>();
+        for (byte b : data) {
+            frequencyMap.put(b, frequencyMap.getOrDefault(b, 0) + 1);
         }
 
-        // Инициализировать очередь с приоритетом, основанную на частотах
+        // Инициализация приоритетной очереди узлов
         priorityQueue = new PriorityQueue<>(Comparator.comparingInt(node -> node.frequency));
 
-        // Добавить узлы в очередь
-        for (Map.Entry<Character, Integer> entry : frequencyMap.entrySet()) {
+        // Создание узлов для каждого символа и добавление их в очередь
+        for (Map.Entry<Byte, Integer> entry : frequencyMap.entrySet()) {
             priorityQueue.add(new Node(entry.getKey(), entry.getValue()));
         }
 
-        // Построить дерево Хаффмана
+        // Построение дерева Хаффмана
         while (priorityQueue.size() > 1) {
-            Node left = priorityQueue.poll();  // Узел с наименьшей частотой
-            Node right = priorityQueue.poll(); // Второй узел с наименьшей частотой
-            Node parent = new Node('0', left.frequency + right.frequency); // Создать родительский узел
+            Node left = priorityQueue.poll(); // Удаляем узел с минимальной частотой
+            Node right = priorityQueue.poll(); // Удаляем следующий узел с минимальной частотой
+            Node parent = new Node((byte) 0, left.frequency + right.frequency); // Создаем родительский узел
             parent.left = left; // Левый потомок
             parent.right = right; // Правый потомок
-            priorityQueue.add(parent); // Добавить родительский узел обратно в очередь
+            priorityQueue.add(parent); // Добавляем родительский узел в очередь
         }
 
-        // Сгенерировать коды Хаффмана
+        // Генерация таблицы кодов Хаффмана
         generateHuffmanCodes(priorityQueue.peek(), "");
     }
 
     // Рекурсивный метод для генерации кодов Хаффмана
     private void generateHuffmanCodes(Node node, String code) {
-        // Если достигли листового узла
-        if (node.left == null && node.right == null) {
-            // Если дерево состоит из одного символа, присвоить ему код "0"
-            if (code.isEmpty()){
+        if (node.left == null && node.right == null) { // Если узел листовой
+            if (code.isEmpty()) { // Обработка случая с одним символом
                 huffmanCodeMap.put(node.character, "0");
                 return;
             }
-            // Добавить символ и его код в карту
-            huffmanCodeMap.put(node.character, code);
+            huffmanCodeMap.put(node.character, code); // Сохраняем код
             return;
         }
-
-        // Рекурсивно пройтись по левому поддереву
         if (node.left != null) {
-            generateHuffmanCodes(node.left, code + "0");
+            generateHuffmanCodes(node.left, code + "0"); // Рекурсия для левого потомка
         }
-
-        // Рекурсивно пройтись по правому поддереву
         if (node.right != null) {
-            generateHuffmanCodes(node.right, code + "1");
+            generateHuffmanCodes(node.right, code + "1"); // Рекурсия для правого потомка
         }
     }
 
-    // Метод для кодирования текста
-    public String encode(String text) {
+    // Кодирование данных с использованием таблицы Хаффмана
+    public String encode(byte[] data) {
         StringBuilder encodedString = new StringBuilder();
-        // Заменить каждый символ на его Хаффман-код
-        for (char character : text.toCharArray()) {
-            encodedString.append(huffmanCodeMap.get(character));
+        for (byte b : data) {
+            encodedString.append(huffmanCodeMap.get(b)); // Преобразуем каждый символ в код
         }
         return encodedString.toString();
     }
 
-    // Возвращает карту кодов Хаффмана
-    public Map<Character, String> getHuffmanCodeMap() {
+    // Возвращает таблицу Хаффмана
+    public Map<Byte, String> getHuffmanCodeMap() {
         return huffmanCodeMap;
     }
 
-    // Главный метод программы
+    // Основной метод программы
     public static void main(String[] args) throws IOException, ClassNotFoundException {
-        // Проверка количества аргументов
-        if (args.length < 3) {
+        if (args.length < 3) { // Проверка количества аргументов
             System.out.println("Usage: java HuffmanCoding <encode/decode> <inputFile> <outputFile>");
             return;
         }
 
-        // Аргументы командной строки
         String operation = args[0]; // Операция: encode или decode
         String inputFilePath = args[1]; // Входной файл
         String outputFilePath = args[2]; // Выходной файл
 
         if (operation.equals("encode")) {
-            // Чтение текста из входного файла
-            String text = new String(Files.readAllBytes(Paths.get(inputFilePath)));
-
-            // Создание объекта HuffmanCoding
+            // Чтение данных из файла
+            byte[] data = Files.readAllBytes(Paths.get(inputFilePath));
             HuffmanCoding huffmanCoding = new HuffmanCoding();
+            huffmanCoding.buildHuffmanTree(data); // Построение дерева Хаффмана
+            String encodedText = huffmanCoding.encode(data); // Кодирование данных
 
-            // Построение дерева Хаффмана и кодирование текста
-            huffmanCoding.buildHuffmanTree(text);
-            String encodedText = huffmanCoding.encode(text);
-
-            // Сохранение закодированного текста и карты кодов в файл
+            // Сохранение таблицы кодов и закодированного текста в файл
             try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(outputFilePath))) {
-                oos.writeObject(huffmanCoding.getHuffmanCodeMap()); // Карта кодов
-                oos.writeObject(encodedText); // Закодированный текст
+                oos.writeObject(huffmanCoding.getHuffmanCodeMap()); // Записываем таблицу кодов
+                oos.writeObject(encodedText); // Записываем закодированный текст
             }
         } else if (operation.equals("decode")) {
-            // Декодирование текста из файла
+            // Чтение таблицы кодов и закодированного текста из файла
             try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(inputFilePath))) {
-                // Чтение карты кодов Хаффмана
                 @SuppressWarnings("unchecked")
-                Map<Character, String> huffmanCodeMap = (Map<Character, String>) ois.readObject();
-                // Чтение закодированного текста
+                Map<Byte, String> huffmanCodeMap = (Map<Byte, String>) ois.readObject();
                 String encodedText = (String) ois.readObject();
 
-                // Декодирование текста
-                StringBuilder decodedString = new StringBuilder();
-                String temp = "";
+                // Обратное преобразование таблицы кодов
+                Map<String, Byte> reverseHuffmanCodeMap = new HashMap<>();
+                for (Map.Entry<Byte, String> entry : huffmanCodeMap.entrySet()) {
+                    reverseHuffmanCodeMap.put(entry.getValue(), entry.getKey());
+                }
 
-                // Постепенное чтение битового потока и поиск соответствующего символа
+                // Декодирование текста
+                List<Byte> decodedBytes = new ArrayList<>();
+                StringBuilder temp = new StringBuilder();
                 for (char bit : encodedText.toCharArray()) {
-                    temp += bit;
-                    for (Map.Entry<Character, String> entry : huffmanCodeMap.entrySet()) {
-                        if (entry.getValue().equals(temp)) {
-                            decodedString.append(entry.getKey());
-                            temp = "";
-                            break;
-                        }
+                    temp.append(bit);
+                    if (reverseHuffmanCodeMap.containsKey(temp.toString())) {
+                        decodedBytes.add(reverseHuffmanCodeMap.get(temp.toString()));
+                        temp.setLength(0);
                     }
                 }
 
-                // Запись декодированного текста в файл
-                try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFilePath))) {
-                    writer.write(decodedString.toString());
+                // Преобразование списка байтов в массив
+                byte[] decodedData = new byte[decodedBytes.size()];
+                for (int i = 0; i < decodedBytes.size(); i++) {
+                    decodedData[i] = decodedBytes.get(i);
+                }
+
+                // Запись декодированных данных в файл
+                try (FileOutputStream fos = new FileOutputStream(outputFilePath)) {
+                    fos.write(decodedData);
                 }
             }
         }
@@ -146,11 +135,11 @@ public class HuffmanCoding {
 // Класс для представления узла дерева Хаффмана
 class Node {
     int frequency; // Частота символа
-    char character; // Символ
+    byte character; // Символ
     Node left; // Левый потомок
     Node right; // Правый потомок
 
-    Node(char character, int frequency) {
+    Node(byte character, int frequency) {
         this.character = character;
         this.frequency = frequency;
     }
